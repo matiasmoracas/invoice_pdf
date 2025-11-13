@@ -96,22 +96,27 @@ with st.expander("🧾 Formulario Cliente", expanded=True):
 # ---------- Helper: extraer Nº de Factura del PDF ----------
 def extraer_numero_factura(pdf_bytes):
     """
-    Busca patrones como: 'Nº 123456', 'N°123456', 'No 123456', 'Nro 123456'.
+    Busca patrones como:
+    'Nº 123456', 'N°: 123456', 'No 123456', 'Nro 123456', etc.
     Devuelve el número (solo dígitos) o None.
     """
-    patron = re.compile(r"(?:Nº|N°|No|N\.o|Nro\.?)\s*([0-9]{5,8})", re.IGNORECASE)
+    # Acepta opcionalmente ':' entre el N° y el número
+    patron = re.compile(r"(?:Nº|N°|No|N\.o|Nro\.?)\s*:?\s*([0-9]{4,8})", re.IGNORECASE)
+
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
             texto = page.get_text()
             m = patron.search(texto)
             if m:
+                numero = m.group(1)
                 doc.close()
-                return m.group(1)
+                return numero
         doc.close()
     except Exception:
         pass
     return None
+
 
 # Guardamos bytes y detectamos Nº de factura ANTES de crear el input
 pdf_bytes = None
@@ -122,11 +127,11 @@ if pdf_file is not None:
         st.session_state["numero_factura"] = numero_detectado
 
 # ========== DATOS DE FIRMA ==========
-with st.expander("✍️ Datos de Firma", expanded=True):
+with st.expander("Vendedor de Mesón", expanded=True):
     observacion = st.text_area("Observación (opcional)")
     iniciales_firmante = st.selectbox(
-        "Iniciales del firmante",
-        ["MOC", "BFS", "MFV"],
+        "Codigo{on}",
+        ["FVM", "JSC",],
         help="Puedes ajustar esta lista según los firmantes frecuentes."
     )
     numero_factura = st.text_input(
