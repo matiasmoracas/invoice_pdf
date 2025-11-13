@@ -271,36 +271,63 @@ def subir_a_drive(nombre_archivo, contenido_pdf):
     return archivo.get("id")
 
 # ================= UI PRINCIPAL ====================
+# ================= UI PRINCIPAL (PREVIEW + FIRMA) ====================
 if pdf_bytes is not None:
     st.subheader("Vista previa del documento original:")
     st.image(render_preview(pdf_bytes), use_container_width=True)
 
     st.subheader("Dibuja la firma aquí:")
-    canvas_result = st_canvas(
-        fill_color="rgba(0, 0, 0, 0)",
-        stroke_width=2,
-        stroke_color="black",
-        background_color="#ffffff00",
-        height=150,
-        width=400,
-        drawing_mode="freedraw",
-        key="canvas"
-    )
 
+    # Centrar el canvas en la pantalla (ideal para tablet)
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        # Estilo del recuadro de firma
+        st.markdown(
+            """
+            <style>
+            .canvas-box {
+                border: 2px solid #dddddd;
+                border-radius: 10px;
+                padding: 10px;
+                background: #ffffff;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown('<div class="canvas-box">', unsafe_allow_html=True)
+
+        canvas_result = st_canvas(
+            fill_color="rgba(0, 0, 0, 0)",
+            stroke_width=3,
+            stroke_color="black",
+            background_color="#ffffff",
+            height=200,     # un poco más alto para tablet
+            width=500,      # más ancho para firmar cómodo
+            drawing_mode="freedraw",
+            key="canvas"
+        )
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Obtener imagen de la firma
     signature_img = None
     if canvas_result.image_data is not None:
         signature_img = Image.fromarray((canvas_result.image_data).astype("uint8"))
 
+    # Botón principal
     if st.button("Firmar Factura"):
         # Validaciones
         if signature_img is None:
             st.warning("⚠️ Dibuja la firma primero.")
-        elif not (nombre and recinto and fecha and rut and st.session_state.get("numero_factura", "")):
+        elif not (nombre and recinto and fecha_str and rut and st.session_state.get("numero_factura", "")):
             st.warning("⚠️ Completa todos los campos del formulario.")
         elif not validate_rut(rut):
             st.warning("⚠️ El RUT no es válido.")
         else:
-            # Construir PDF final
+            # Construir PDF final con firma
             pdf_final_io = insertar_firma_y_texto_en_pdf(
                 pdf_bytes=pdf_bytes,
                 firma_img=signature_img,
@@ -314,11 +341,13 @@ if pdf_bytes is not None:
 
             if pdf_final_io:
                 st.success("✅ Factura firmada correctamente.")
+
                 with st.spinner("Subiendo a Google Drive..."):
                     subir_a_drive(
                         f"Factura {st.session_state['numero_factura']} {iniciales_firmante}.pdf",
                         pdf_final_io
                     )
+
                 st.success("Factura enviada a Google Drive con éxito.")
 
                 st.subheader("Vista previa del documento final:")
@@ -330,6 +359,7 @@ if pdf_bytes is not None:
                     file_name=f"Factura {st.session_state['numero_factura']} {iniciales_firmante}.pdf",
                     mime="application/pdf"
                 )
+
 
 st.markdown("""
 ---
