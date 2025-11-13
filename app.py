@@ -253,7 +253,7 @@ def subir_a_drive(nombre_archivo, contenido_pdf):
         "name": nombre_archivo,
         "mimeType": "application/pdf",
         # MISMA CARPETA COMPARTIDA (puedes cambiarla si quieres una carpeta solo para facturas)
-        "parents": ["0AFh4pnUAC83dUk9PVA"]
+        "parents": ["0ALdPR-m3f2zlUk9PVA"]
     }
     contenido_pdf.seek(0)
     media = MediaIoBaseUpload(contenido_pdf, mimetype="application/pdf")
