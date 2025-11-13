@@ -127,10 +127,10 @@ if pdf_file is not None:
         st.session_state["numero_factura"] = numero_detectado
 
 # ========== DATOS DE FIRMA ==========
-with st.expander("✍️ Datos de Firma", expanded=True):
+with st.expander("✍️ Datos de Vendedor Mesón", expanded=True):
     observacion = st.text_area("Observación (opcional)")
     iniciales_firmante = st.selectbox(
-        "Iniciales del firmante",
+        "Iniciales del Vendedor Mesón",
         ["FVM", "JSC",],
         help="Puedes ajustar esta lista según los firmantes frecuentes."
     )
