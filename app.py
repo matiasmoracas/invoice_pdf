@@ -113,6 +113,39 @@ def extraer_numero_factura(pdf_bytes):
         pass
     return None
 
+def extraer_numero_factura_del_nombre(nombre_archivo):
+    """
+    Busca el número de factura (5 a 8 dígitos) directamente en el nombre del archivo.
+    Patrones: 'FAC_123456.pdf', 'Factura_123456.pdf', '123456-FAC.pdf', etc.
+    Devuelve el número (solo dígitos) o None.
+    """
+    # Busca 5 a 8 dígitos consecutivos en el nombre del archivo.
+    patron = re.compile(r"(\d{5,8})") 
+    m = patron.search(nombre_archivo)
+    if m:
+        return m.group(1)
+    return None
+
+
+# Guardamos bytes y detectamos Nº de factura ANTES de crear el input
+pdf_bytes = None
+if pdf_file is not None:
+    # 1. Guardar bytes del PDF (necesario para la firma posterior)
+    pdf_bytes = pdf_file.read()
+
+    # 2. Detectar Nº de factura del NOMBRE del archivo (¡NUEVA LÓGICA!)
+    numero_detectado = extraer_numero_factura_del_nombre(pdf_file.name)
+    
+    if numero_detectado:
+        st.session_state["numero_factura"] = numero_detectado
+    # El bloque original que usaba extraer_numero_factura(pdf_bytes) ha sido reemplazado.
+    # Si quieres mantenerlo como FALLBACK si la detección por nombre falla, descomenta las líneas siguientes:
+    # elif not numero_detectado:
+    #     numero_detectado = extraer_numero_factura(pdf_bytes)
+    #     if numero_detectado:
+    #         st.session_state["numero_factura"] = numero_detectado
+
+
 
 # Guardamos bytes y detectamos Nº de factura ANTES de crear el input
 pdf_bytes = None
