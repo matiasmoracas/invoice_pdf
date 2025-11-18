@@ -96,22 +96,18 @@ with st.expander("🧾 Formulario Cliente", expanded=True):
 # ---------- Helper: extraer Nº de Factura del PDF ----------
 def extraer_numero_factura(pdf_bytes):
     """
-    Busca patrones como:
-    'Nº 123456', 'N°: 123456', 'No 123456', 'Nro 123456', etc.
+    Busca patrones como: 'Nº 123456', 'N°123456', 'No 123456', 'Nro 123456'.
     Devuelve el número (solo dígitos) o None.
     """
-    # Acepta opcionalmente ':' entre el N° y el número
-    patron = re.compile(r"(?:Nº|N°|No|N\.o|Nro\.?)\s*:?\s*([0-9]{4,8})", re.IGNORECASE)
-
+    patron = re.compile(r"(?:Nº|N°|No|N\.o|Nro\.?)\s*([0-9]{5,8})", re.IGNORECASE)
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
             texto = page.get_text()
             m = patron.search(texto)
             if m:
-                numero = m.group(1)
                 doc.close()
-                return numero
+                return m.group(1)
         doc.close()
     except Exception:
         pass
