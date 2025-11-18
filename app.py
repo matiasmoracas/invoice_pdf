@@ -3,7 +3,7 @@ from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import io
 import re
-import fitz  # PyMuPDF
+import fitz # PyMuPDF
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -55,7 +55,7 @@ def format_rut(rut: str) -> str:
         return rut
     cuerpo, dv = rut[:-1], rut[-1]
     if not cuerpo.isdigit():
-        return rut  # incompleto; no formatear aún
+        return rut # incompleto; no formatear aún
     return f"{_format_miles(cuerpo)}-{dv}"
 
 def validate_rut(rut: str) -> bool:
@@ -93,7 +93,8 @@ with st.expander("🧾 Formulario Cliente", expanded=True):
     if rut and not validate_rut(rut):
         st.caption("⚠️ RUT inválido (revisa dígito verificador).")
 
-# ---------- Helper: extraer Nº de Factura del PDF ----------
+
+# ---------- Helper ORIGINAL (No usado en nueva lógica): extraer Nº de Factura del PDF ----------
 def extraer_numero_factura(pdf_bytes):
     """
     Busca patrones como: 'Nº 123456', 'N°123456', 'No 123456', 'Nro 123456'.
@@ -101,6 +102,7 @@ def extraer_numero_factura(pdf_bytes):
     """
     patron = re.compile(r"(?:Nº|N°|No|N\.o|Nro\.?)\s*([0-9]{5,8})", re.IGNORECASE)
     try:
+        # Nota: 'fitz' está importado, pero esta función ya no se llama en la lógica principal
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         for page in doc:
             texto = page.get_text()
@@ -113,6 +115,7 @@ def extraer_numero_factura(pdf_bytes):
         pass
     return None
 
+# ---------- Helper NUEVO: extraer Nº de Factura del NOMBRE del archivo ----------
 def extraer_numero_factura_del_nombre(nombre_archivo):
     """
     Busca el número de factura (5 a 8 dígitos) directamente en el nombre del archivo.
@@ -130,30 +133,18 @@ def extraer_numero_factura_del_nombre(nombre_archivo):
 # Guardamos bytes y detectamos Nº de factura ANTES de crear el input
 pdf_bytes = None
 if pdf_file is not None:
+    # CORRECCIÓN: Reseteamos el puntero del archivo para evitar EmptyFileError en reruns.
+    pdf_file.seek(0) 
+    
     # 1. Guardar bytes del PDF (necesario para la firma posterior)
     pdf_bytes = pdf_file.read()
 
-    # 2. Detectar Nº de factura del NOMBRE del archivo (¡NUEVA LÓGICA!)
+    # 2. Detectar Nº de factura del NOMBRE del archivo
     numero_detectado = extraer_numero_factura_del_nombre(pdf_file.name)
     
     if numero_detectado:
         st.session_state["numero_factura"] = numero_detectado
-    # El bloque original que usaba extraer_numero_factura(pdf_bytes) ha sido reemplazado.
-    # Si quieres mantenerlo como FALLBACK si la detección por nombre falla, descomenta las líneas siguientes:
-    # elif not numero_detectado:
-    #     numero_detectado = extraer_numero_factura(pdf_bytes)
-    #     if numero_detectado:
-    #         st.session_state["numero_factura"] = numero_detectado
 
-
-
-# Guardamos bytes y detectamos Nº de factura ANTES de crear el input
-pdf_bytes = None
-if pdf_file is not None:
-    pdf_bytes = pdf_file.read()
-    numero_detectado = extraer_numero_factura(pdf_bytes)
-    if numero_detectado:
-        st.session_state["numero_factura"] = numero_detectado
 
 # ========== DATOS DE FIRMA ==========
 with st.expander("✍️ Datos de Vendedor Mesón", expanded=True):
@@ -187,7 +178,7 @@ def insertar_firma_y_texto_en_pdf(
     'Nombre:', 'Recinto:', 'RUT:', 'Fecha:', 'Firma', 'CEDIBLE'
     """
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    pagina = doc[-1]  # última página
+    pagina = doc[-1] # última página
 
     def insertar_dato_campo(etiqueta, texto, offset_x=5, offset_y=4):
         resultados = pagina.search_for(etiqueta)
@@ -356,6 +347,7 @@ with col2:
                 st.success("Factura enviada a Google Drive con éxito.")
 
                 st.subheader("Vista previa del documento final:")
+                pdf_final_io.seek(0) # Mover el cursor al inicio para la vista previa
                 st.image(render_preview(pdf_final_io.getvalue()), use_container_width=True)
 
                 st.download_button(
